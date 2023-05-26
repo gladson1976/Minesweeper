@@ -17,6 +17,7 @@ export default function Minesweeper() {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   };
 
+  const [safeGame] = useState(false);
   const [gameTimer, setGameTimer] = useState(0);
   const [timerRef, setTimerRef] = useState(null);
   const [numberColors] = useState(['gray', 'blue', 'green', 'red', 'purple', 'maroon', 'turquoise', 'black', 'dark-gray'])
@@ -55,8 +56,8 @@ export default function Minesweeper() {
     [-1, 0]
   ]);
 
-  const initBoard = useCallback(() => {
-    let tempGame = {};
+  const initMinefield = useCallback(() => {
+    let tempGame = _.cloneDeep(currentGame);
     _.set(
       tempGame,
       'minefield',
@@ -64,13 +65,8 @@ export default function Minesweeper() {
     );
     _.set(tempGame, 'timer', 0);
     _.set(tempGame, 'gameState', 0);
-    setCurrentGame(tempGame);
-  }, [currentDifficulty]);
-
-  const initMinefield = useCallback(() => {
-    initBoard();
     setGameTimer(0);
-    let tempGame = _.cloneDeep(currentGame);
+
     let boardIndexes = [];
     for (let i = 0; i < currentDifficulty.rows; i++) {
       _.fill(tempGame.minefield[i], [0, 0]);
@@ -106,7 +102,8 @@ export default function Minesweeper() {
       }
     }
     setCurrentGame(tempGame);
-  }, [cellNeighbours, currentDifficulty, currentGame, initBoard]);
+    console.log(tempGame);
+  }, [cellNeighbours, currentDifficulty, currentGame]);
 
   const startTimer = useCallback(() => {
     const t = window.setInterval(() => setGameTimer(gameTimer => gameTimer + 1), 1000);
@@ -117,18 +114,6 @@ export default function Minesweeper() {
     window.clearInterval(timerRef);
     setTimerRef(null);
   }, [timerRef]);
-
-  // const revealMines = useCallback(() => {
-  //   let tempGame = _.cloneDeep(currentGame);
-  //   for (let i = 0; i < currentDifficulty.rows; i++) {
-  //     for (let j = 0; j < currentDifficulty.columns; j++) {
-  //       if (tempGame.minefield[i][j][0] === 9 && tempGame.minefield[i][j][1] === 0) {
-  //         tempGame.minefield[i][j] = [9, 1];
-  //       }
-  //     }
-  //   }
-  //   setCurrentGame(tempGame);
-  // }, [currentDifficulty, currentGame]);
 
   const clearNeighbours = useCallback((row, col, game) => {
     let currentCell = game.minefield[row][col];
@@ -166,6 +151,7 @@ export default function Minesweeper() {
     } else {
       tempGame.minefield[row][col] = [9, 9];
       tempGame.gameState = 2;
+      // Reveal all remaining mines if there is an explosion
       for (let i = 0; i < currentDifficulty.rows; i++) {
         for (let j = 0; j < currentDifficulty.columns; j++) {
           if (tempGame.minefield[i][j][0] === 9 && tempGame.minefield[i][j][1] === 0) {
@@ -173,7 +159,6 @@ export default function Minesweeper() {
           }
         }
       }
-      // revealMines();
       stopTimer();
     }
     setCurrentGame(tempGame);
@@ -186,7 +171,7 @@ export default function Minesweeper() {
       >
         {_.map(currentGame.minefield, (mineRow, rindex) => {
           return _.map(mineRow, (mineCell, cindex) => {
-            if (mineCell[1] === 0) {
+            if (mineCell[1] === 0) { // Unopened cell
               return (
                 <button
                   className={
@@ -201,13 +186,13 @@ export default function Minesweeper() {
                 />
               );
             }
-            if (mineCell[1] === 1) {
+            if (mineCell[1] === 1) { // Opened cell
               return (
                 <div
                   className={
                     classNames('minecell', `minecell-${numberColors[mineCell[0]]}`,
                       {
-                        'minecell-mine': mineCell[0] === 9 && mineCell[1] === 1
+                        'minecell-mine': mineCell[0] === 9 && mineCell[1] === 1 // Reveal all mines if there is an explosion
                       }
                     )
                   }
@@ -221,7 +206,7 @@ export default function Minesweeper() {
                 </div>
               );
             }
-            if (mineCell[1] === 9) {
+            if (mineCell[1] === 9) { // Mine explosion !!!
               return (
                 <div
                   className={classNames('minecell', 'minecell-explode')}
@@ -256,8 +241,11 @@ export default function Minesweeper() {
   }, [drawIcons, drawMinefield]);
 
   useEffect(() => {
-    drawGameBoard();
-  }, [drawGameBoard, currentGame.minefield]);
+    if (!safeGame) {
+      initMinefield();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return drawGameBoard();
 }
