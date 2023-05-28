@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import _ from 'lodash';
+// import { useLongpress } from './useLongpress';
+import { useDoubleclick } from './useDoubleclick';
 import './Minesweeper.css';
 
 export default function Minesweeper() {
@@ -56,6 +58,15 @@ export default function Minesweeper() {
     [-1, 0]
   ]);
 
+  const minefieldCheckClick = useDoubleclick({
+    onSingleClick: ev => navigateMinefield(ev),
+    onDoubleClick: ev => markMine(ev)
+  });
+  const clearedCheckClick = useDoubleclick({
+    onSingleClick: ev => clearUnflagged(ev),
+    onDoubleClick: ev => clearUnflagged(ev)
+  });
+  
   const initMinefield = useCallback(() => {
     let tempGame = _.cloneDeep(currentGame);
     _.set(
@@ -102,7 +113,6 @@ export default function Minesweeper() {
       }
     }
     setCurrentGame(tempGame);
-    console.log(tempGame);
   }, [cellNeighbours, currentDifficulty, currentGame]);
 
   const startTimer = useCallback(() => {
@@ -117,7 +127,7 @@ export default function Minesweeper() {
 
   const clearNeighbours = useCallback((row, col, game) => {
     let currentCell = game.minefield[row][col];
-    if (currentCell[1] !== 1) {
+    if (currentCell[1] !== 1 && currentCell[1] !== 2) {
       game.minefield[row][col] = [game.minefield[row][col][0], 1];
       if (currentCell[0] === 0) {
         for (let k = 0; k < cellNeighbours.length; k++) {
@@ -133,11 +143,26 @@ export default function Minesweeper() {
           }
         }
       }
+      if (currentCell[0] === 9) {
+        game.minefield[row][col] = [9, 9];
+        game.gameState = 2;
+        // Reveal all remaining mines if there is an explosion
+        for (let i = 0; i < currentDifficulty.rows; i++) {
+          for (let j = 0; j < currentDifficulty.columns; j++) {
+            if (game.minefield[i][j][0] === 9 && game.minefield[i][j][1] === 0) {
+              game.minefield[i][j] = [9, 1];
+            }
+          }
+        }
+        stopTimer();              
+      }
     }
     return;
-  }, [cellNeighbours, currentDifficulty]);
+  }, [cellNeighbours, currentDifficulty, stopTimer]);
 
-  const navigateMinefield = useCallback((row, col) => {
+  const navigateMinefield = useCallback((ev) => {
+    const row = ev.target.attributes.getNamedItem('row').value;
+    const col = ev.target.attributes.getNamedItem('col').value;
     let tempGame = _.cloneDeep(currentGame);
     if (tempGame.gameState === 2) {
       return;
@@ -164,6 +189,67 @@ export default function Minesweeper() {
     setCurrentGame(tempGame);
   }, [clearNeighbours, currentDifficulty, currentGame, startTimer, stopTimer]);
 
+  const clearUnflagged = useCallback((ev) => {
+    const row = ev.target.attributes.getNamedItem('row').value;
+    const col = ev.target.attributes.getNamedItem('col').value;
+    let tempGame = _.cloneDeep(currentGame);
+
+    const neighbourhoodMines = tempGame.minefield[row][col][0];
+    let markedMines = 0;
+    for (let k = 0; k < cellNeighbours.length; k++) {
+      const cellNeighbour = cellNeighbours[k];
+      const neighbour = [parseInt(row) + parseInt(cellNeighbour[0]), parseInt(col) + parseInt(cellNeighbour[1])];
+      if (
+        neighbour[0] > -1 &&
+        neighbour[0] < currentDifficulty.rows &&
+        neighbour[1] > -1 &&
+        neighbour[1] < currentDifficulty.columns
+      ) {
+        if (tempGame.minefield[neighbour[0]][neighbour[1]][1] === 2) {
+          markedMines++;
+        }
+      }
+    }
+    if (neighbourhoodMines === markedMines) {
+      for (let k = 0; k < cellNeighbours.length; k++) {
+        const cellNeighbour = cellNeighbours[k];
+        const neighbour = [parseInt(row) + parseInt(cellNeighbour[0]), parseInt(col) + parseInt(cellNeighbour[1])];
+        if (
+          neighbour[0] > -1 &&
+          neighbour[0] < currentDifficulty.rows &&
+          neighbour[1] > -1 &&
+          neighbour[1] < currentDifficulty.columns
+        ) {
+          if (tempGame.minefield[neighbour[0]][neighbour[1]][1] !== 2) {
+            clearNeighbours(neighbour[0], neighbour[1], tempGame);
+          }
+        }
+      }
+    }
+
+    setCurrentGame(tempGame);
+  }, [cellNeighbours, clearNeighbours, currentDifficulty, currentGame]);
+
+  const markMine = useCallback((ev) => {
+    const row = ev.target.attributes.getNamedItem('row').value;
+    const col = ev.target.attributes.getNamedItem('col').value;
+    let tempGame = _.cloneDeep(currentGame);
+    if (tempGame.gameState === 2) {
+      return;
+    }
+    if (tempGame.gameState === 0 || tempGame.gameState === 3) {
+      tempGame.gameState = 1;
+      startTimer();
+    }
+    if (tempGame.minefield[row][col][1] === 0) {
+      tempGame.minefield[row][col] = [tempGame.minefield[row][col][0], 2];
+    } else if (tempGame.minefield[row][col][1] === 2) {
+      tempGame.minefield[row][col] = [tempGame.minefield[row][col][0], 0];
+    }
+
+    setCurrentGame(tempGame);
+  }, [currentGame, startTimer]);
+
   const drawMinefield = useCallback(() => {
     return (
       <div
@@ -171,18 +257,21 @@ export default function Minesweeper() {
       >
         {_.map(currentGame.minefield, (mineRow, rindex) => {
           return _.map(mineRow, (mineCell, cindex) => {
-            if (mineCell[1] === 0) { // Unopened cell
+            if (mineCell[1] === 0 || mineCell[1] === 2) { // Unopened cell
               return (
                 <button
                   className={
                     classNames('minecell-button',
                       {
-                        'minecell-mine': mineCell[0] === 9 && mineCell[1] === 1
+                        'minecell-mine': mineCell[0] === 9 && mineCell[1] === 1,
+                        'minecell-flag': mineCell[1] === 2
                       }
                     )
                   }
                   key={`${rindex}${cindex}`}
-                  onClick={() => navigateMinefield(rindex, cindex)}
+                  row={rindex}
+                  col={cindex}
+                  {...minefieldCheckClick}
                 />
               );
             }
@@ -192,11 +281,15 @@ export default function Minesweeper() {
                   className={
                     classNames('minecell', `minecell-${numberColors[mineCell[0]]}`,
                       {
-                        'minecell-mine': mineCell[0] === 9 && mineCell[1] === 1 // Reveal all mines if there is an explosion
+                        'minecell-mine': mineCell[0] === 9 && mineCell[1] === 1, // Reveal all mines if there is an explosion
+                        'minecell-flag': mineCell[1] === 2
                       }
                     )
                   }
                   key={`${rindex}${cindex}`}
+                  row={rindex}
+                  col={cindex}
+                  {...clearedCheckClick}
                 >
                   {
                     mineCell[0] === 0 || mineCell[0] === 9
@@ -211,6 +304,8 @@ export default function Minesweeper() {
                 <div
                   className={classNames('minecell', 'minecell-explode')}
                   key={`${rindex}${cindex}`}
+                  row={rindex}
+                  col={cindex}
                 />
               );
             }
@@ -218,7 +313,7 @@ export default function Minesweeper() {
         })}
       </div>
     );
-  }, [currentGame, navigateMinefield, numberColors]);
+  }, [clearedCheckClick, currentGame.minefield, minefieldCheckClick, numberColors]);
 
   const drawIcons = useCallback(() => {
     return (

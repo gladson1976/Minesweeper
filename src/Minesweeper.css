@@ -2,6 +2,7 @@
   font-family: Calibri;
   font-size: initial;
   font-weight: bold;
+  user-select: none;
 }
 
 .game-board {
@@ -86,7 +87,7 @@
 /* .minecell-mine {
   background-color: #ffbb00;
 } */
-.minecell-mine:before {
+/* .minecell-mine:before {
   font-family: Wingdings;
   content: 'M';
 }
@@ -96,6 +97,23 @@
 .minecell-explode:before {
   font-family: Wingdings;
   content: 'M';
+} */
+/* .minecell-flag:before {
+  font-family: Wingdings;
+  content: 'O';
+} */
+.minecell-mine {
+  background-image: url(./Mine.png);
+  background-size: contain;
+}
+.minecell-explode {
+  /* background-color: #ffa1a1; */
+  background-image: url(./MineE.png);
+  background-size: contain;
+}
+.minecell-flag {
+  background-image: url(./Flag.png);
+  background-size: contain;
 }
 
 .icon-bar {
