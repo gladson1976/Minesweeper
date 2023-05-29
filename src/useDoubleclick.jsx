@@ -1,12 +1,21 @@
 import { useCallback, useMemo, useRef } from 'react';
 
-  /**
-   * A simple React hook for differentiating single and double clicks on the same component.
-   *
-   * @param {function} onSingleClick A callback function for single click events
-   * @param {function} onDoubleClick A callback function for double click events
-   * @param {number} [ms=200] The amount of time (in milliseconds) to wait before differentiating a single from a double click
-   */
+/**
+ * A simple React hook for differentiating single and double clicks on the same component.
+ * 
+ * @param {function} onSingleClick A callback function for single click events
+ * @param {function} onDoubleClick A callback function for double click events
+ * @param {number} ms The amount of time (in milliseconds) to wait before differentiating a single from a double click (defaults to 200ms)
+ * 
+ * @example Usage:
+ *    const checkDoubleclick = useDoubleclick({
+ *      onSingleClick: ev => singleClickCallback(ev),
+ *      onDoubleClick: ev => doubleClickCallback(ev),
+ *      ms: 300
+ *    });
+ * 
+ *    <element {...checkDoubleClick} />
+ */
 export function useDoubleclick ({
   onSingleClick = () => null,
   onDoubleClick = () => null,

@@ -1,5 +1,21 @@
 import { useCallback, useMemo, useRef } from 'react';
 
+/**
+ * A simple React hook for differentiating click and long press (click and hold) on the same component.
+ *
+ * @param {function} onClick A callback function for click events
+ * @param {function} onLongpress A callback function for long press events
+ * @param {number} ms The amount of time (in milliseconds) to wait before differentiating a single from a double click (defaults to 200ms)
+ * 
+ * @example Usage:
+ *    const checkLongpress = useLongpress({
+ *      onClick: ev => clickCallback(ev),
+ *      onLongpress: ev => logpressCallback(ev),
+ *      ms: 300
+ *    });
+ * 
+ *    <element {...checkLongpress} />
+*/
 export function useLongpress({
   onClick = () => {},
   onLongpress = () => {},

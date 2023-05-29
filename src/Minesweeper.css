@@ -1,8 +1,23 @@
 * {
-  font-family: Calibri;
-  font-size: initial;
+  /* font-family: Calibri; */
+  /* font-size: initial; */
   font-weight: bold;
   user-select: none;
+}
+
+@font-face {
+	font-family: 'Material Icons';
+	font-style: normal;
+	font-weight: 400;
+	src: local('Material Icons'),
+		local('MaterialIcons-Regular'),
+		url(./MaterialIcons-Regular.ttf) format('truetype');
+}
+
+html, body, #root {
+  margin: 0;
+  height: 100%;
+  font-size: 4vmin;
 }
 
 .game-board {
@@ -18,6 +33,7 @@
   border: 1px solid black;
   width: inherit;
   height: inherit;
+  margin-top: 1rem;
 }
 
 .minefield-beginner {
@@ -123,4 +139,77 @@
   width: 100%;
   margin: 0.5rem 0;
   flex-direction: row;
+}
+
+.icon {
+  font-family: 'Material Icons';
+	font-size: 2rem;
+	margin-left: 0.5rem;
+	margin-top: 0.75rem;
+}
+.icon-hint:before {
+	content: '\e838';
+}
+.icon-replay:before {
+	content: '\e042';
+}
+.icon-settings:before {
+	content: '\e8b8';
+}
+.icon-bar-chart:before {
+	content: '\e26b';
+}
+.icon-question:before {
+	content: '\e8fd';
+}
+
+.hidden {
+	display: none;
+}
+.font-bold {
+	font-weight: 400;
+}
+.font-small {
+	font-size: 0.75rem;
+}
+.text-right {
+	text-align: right;
+}
+.text-left {
+	text-align: left;
+}
+.text-center {
+	text-align: center;
+}
+.font-larger {
+	font-size: 1.125rem;
+}
+
+div.minesweeper-title {
+	display: flex;
+	align-items: center;
+	/* margin: 0px 0.5rem; */
+	width: auto;
+	height: 3.5rem;
+}
+
+div.title-border {
+	border-bottom: .25rem solid #3a3a3a;
+}
+
+table.minesweeper-title {
+	width: 100%;
+	margin: 0 auto;
+}
+
+td.title {
+	font-size: 1.5rem;
+	font-weight: 400;
+}
+
+table.onitama-title td.onitama-image {
+	width: 3rem;
+	height: 3rem;
+	background-repeat: no-repeat;
+	background-size: cover
 }
