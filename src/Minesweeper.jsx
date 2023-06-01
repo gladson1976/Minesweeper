@@ -129,9 +129,23 @@ export default function Minesweeper() {
     setTimerRef(null);
   }, [timerRef]);
 
-  const showVictory = useCallback(() => {
+  const showAllMines = useCallback((tempGame) => {
+    if (_.isUndefined(tempGame)) {
+      return;
+    }
+    for (let i = 0; i < currentDifficulty.rows; i++) {
+      for (let j = 0; j < currentDifficulty.columns; j++) {
+        if (tempGame.minefield[i][j][0] === 9 && tempGame.minefield[i][j][1] === 0) {
+          tempGame.minefield[i][j] = [9, 2];
+        }
+      }
+    }
+  }, [currentDifficulty]);
+
+  const showVictory = useCallback((tempGame) => {
+    showAllMines(tempGame);
     stopTimer();
-  }, [stopTimer]);
+  }, [showAllMines, stopTimer]);
 
   const isMinefieldCleared = useCallback((tempGame) => {
     const minesRemaining = _.reduce(_.map(tempGame.minefield, (row) => {
@@ -150,7 +164,7 @@ export default function Minesweeper() {
   const clearNeighbours = useCallback((row, col, game) => {
     let currentCell = game.minefield[row][col];
     if (currentCell[1] !== 1 && currentCell[1] !== 2) {
-      game.minefield[row][col] = [game.minefield[row][col][0], 1];
+      game.minefield[row][col] = [currentCell[0], 1];
       if (currentCell[0] === 0) {
         for (let k = 0; k < cellNeighbours.length; k++) {
           const cellNeighbour = cellNeighbours[k];
@@ -166,6 +180,7 @@ export default function Minesweeper() {
         }
       }
       if (currentCell[0] === 9) {
+        console.log(game.minefield);
         game.minefield[row][col] = [9, 9];
         game.gameState = 2;
         // Reveal all remaining mines if there is an explosion
@@ -189,16 +204,16 @@ export default function Minesweeper() {
     if (tempGame.gameState === 2) {
       return;
     }
-    if (tempGame.gameState === 0 || tempGame.gameState === 3) {
+    if (tempGame.gameState === 0 || tempGame.gameState === 3) { // Not clicked yet or Paused
       tempGame.gameState = 1;
       startTimer();
     }
-    if (tempGame.minefield[row][col][0] !== 9 && tempGame.minefield[row][col][0] !== 2) {
+    if (tempGame.minefield[row][col][0] !== 9 && tempGame.minefield[row][col][1] !== 2) {
       clearNeighbours(row, col, tempGame);
       if (isMinefieldCleared(tempGame)) {
-        showVictory();
+        showVictory(tempGame);
       }
-    } else {
+    } else if (tempGame.minefield[row][col][0] === 9) {
       tempGame.minefield[row][col] = [9, 9];
       tempGame.gameState = 2;
       // Reveal all remaining mines if there is an explosion
@@ -309,8 +324,7 @@ export default function Minesweeper() {
                   className={
                     classNames('minecell', `minecell-${numberColors[mineCell[0]]}`,
                       {
-                        'minecell-mine': mineCell[0] === 9 && mineCell[1] === 1, // Reveal all mines if there is an explosion
-                        'minecell-flag': mineCell[1] === 2
+                        'minecell-mine': mineCell[0] === 9 && mineCell[1] === 1 // Reveal all mines if there is an explosion
                       }
                     )
                   }
